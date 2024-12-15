@@ -1,0 +1,5 @@
+#!/usr/bin/env zsh
+
+function cwe() {
+  cargo watch -q -c -x "run -q --example '$1'"
+}
