@@ -6,17 +6,17 @@ fn main() -> Result<()> {
     let lua = Lua::new();
     let chunk = lua.load(
         r#"
-local num = 42
-print("Hello from Lua! " .. num)
-return num + value_one
-
+function do_stuff(name)
+    local num = 42
+    name = name or "haha"
+    print("Hello from " .. name .. " " .. num)
+    return num + value_one
+end
+return do_stuff
        "#,
     );
-    //Option 1 - with globals
-    // let globals = lua.globals();
-    // globals.set("value_one", 111)?;
 
-    //Option 2 - with set_environment
+    let lua_fn = chunk.eval::<Function>()?;
     let env = lua.create_table()?;
     env.set("value_one", 112)?;
     let globals = lua.globals();
@@ -24,10 +24,14 @@ return num + value_one
         let (key, value) = pair?;
         env.set(key, value)?;
     }
-    let chunk = chunk.set_environment(env);
+    lua_fn.set_environment(env);
 
-    let result = chunk.eval::<Value>()?;
-    print!("Result: {:?}", result);
+    for i in 0..3 {
+        let mut args = MultiValue::new();
+        args.push_front("Rust".into_lua(&lua)?);
+        let result = lua_fn.call::<Value>(args)?;
+        println!("Result: {:?}", result);
+    }
 
     Ok(())
 }
